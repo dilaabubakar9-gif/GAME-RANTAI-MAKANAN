@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Rantai Makanan - IPA Kelas 5 SD</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Nunito & Fredoka -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tone.js for Sound Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        nunito: ['Nunito', 'sans-serif'],
+                    },
+                    colors: {
+                        nature: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #064e3b 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .title-font {
+            font-family: 'Fredoka', cursive;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* Pulse and Float Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        .animate-shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes attackLeft {
+            0% { transform: translateX(0) scale(1); }
+            50% { transform: translateX(80px) scale(1.2) rotate(10deg); }
+            100% { transform: translateX(0) scale(1); }
+        }
+
+        .animate-attack-left {
+            animation: attackLeft 0.5s ease-in-out;
+        }
+
+        @keyframes attackRight {
+            0% { transform: translateX(0) scale(1); }
+            50% { transform: translateX(-80px) scale(1.2) rotate(-10deg); }
+            100% { transform: translateX(0) scale(1); }
+        }
+
+        .animate-attack-right {
+            animation: attackRight 0.5s ease-in-out;
+        }
+
+        /* Custom Drag & Drop Styling */
+        .drag-item {
+            cursor: grab;
+            transition: all 0.2s ease;
+        }
+        .drag-item:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+        }
+        .drag-item.selected {
+            ring: 4px;
+            border-color: #f59e0b;
+            background-color: #78350f;
+            transform: scale(1.05);
+        }
+
+        .drop-zone {
+            transition: all 0.2s ease;
+        }
+        .drop-zone.drag-over {
+            background-color: rgba(34, 197, 94, 0.25);
+            border-color: #22c55e;
+            transform: scale(1.02);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="text-white flex flex-col justify-between min-h-screen relative overflow-x-hidden">
+
+    <!-- Header / Navbar -->
+    <header class="w-full bg-slate-900/90 border-b border-emerald-500/30 px-4 py-3 sticky top-0 z-40 backdrop-blur-md shadow-lg">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-900 font-bold text-xl shadow-lg shadow-emerald-500/30">
+                    <i class="fa-solid fa-leaf"></i>
+                </div>
+                <div>
+                    <h1 class="title-font text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300">
+                        BATTLE RANTAI MAKANAN
+                    </h1>
+                    <p class="text-xs text-emerald-200/70 hidden sm:block">Kuis Interaktif IPA Kelas 5 SD - 15 Soal Pertandingan Kelompok</p>
+                </div>
+            </div>
+
+            <!-- Audio & Reset Controls -->
+            <div class="flex items-center space-x-2">
+                <button id="soundToggle" onclick="toggleAudio()" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 transition hover:scale-105" title="Suara On/Off">
+                    <i id="soundIcon" class="fa-solid fa-volume-high text-lg"></i>
+                </button>
+                <button onclick="restartGameConfirm()" class="px-3 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 text-sm font-semibold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span class="hidden md:inline">Ulangi</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN GAME CONTAINER -->
+    <main class="max-w-5xl mx-auto w-full p-4 flex-grow flex flex-col justify-center my-2">
+
+        <!-- 1. SETUP / START SCREEN -->
+        <div id="startScreen" class="glass-card rounded-3xl p-6 md:p-10 text-center max-w-2xl mx-auto my-auto shadow-2xl relative overflow-hidden border border-emerald-500/30">
+            <div class="absolute -top-12 -left-12 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl"></div>
+            <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl"></div>
+
+            <div class="inline-block p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 mb-4 animate-float">
+                <i class="fa-solid fa-shield-halved text-5xl text-emerald-400"></i>
+            </div>
+
+            <h2 class="title-font text-3xl md:text-4xl font-bold text-white mb-2">Arena Pertarungan 15 Soal</h2>
+            <p class="text-slate-300 text-sm md:text-base mb-6">
+                Uji pengetahuan rantai & jaring-jaring makanan! Setiap kelompok mendapat <span class="text-amber-400 font-bold">15 Soal Tantangan</span> (Drag & Drop + Pilihan Ganda).
+            </p>
+
+            <!-- Team Setup Form -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 text-left">
+                <!-- Team 1 Input -->
+                <div class="bg-slate-800/80 p-4 rounded-2xl border-2 border-emerald-500/40">
+                    <label class="block text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-users mr-1"></i> Tim / Kelompok 1
+                    </label>
+                    <input type="text" id="team1Input" value="Kelompok Garuda" class="w-full bg-slate-900 border border-emerald-500/50 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                    <div class="mt-3 flex items-center justify-between text-xs text-slate-400">
+                        <span>Avatar Tim:</span>
+                        <span class="text-2xl">🦅</span>
+                    </div>
+                </div>
+
+                <!-- Team 2 Input -->
+                <div class="bg-slate-800/80 p-4 rounded-2xl border-2 border-rose-500/40">
+                    <label class="block text-xs font-bold text-rose-400 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-users mr-1"></i> Tim / Kelompok 2
+                    </label>
+                    <input type="text" id="team2Input" value="Kelompok Harimau" class="w-full bg-slate-900 border border-rose-500/50 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:ring-2 focus:ring-rose-400">
+                    <div class="mt-3 flex items-center justify-between text-xs text-slate-400">
+                        <span>Avatar Tim:</span>
+                        <span class="text-2xl">🐯</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-amber-500 text-slate-950 font-bold title-font text-xl shadow-lg shadow-emerald-500/30 hover:scale-[1.02] active:scale-95 transition cursor-pointer flex items-center justify-center gap-3">
+                <i class="fa-solid fa-gamepad text-2xl"></i>
+                MULAI PERTANDINGAN!
+            </button>
+        </div>
+
+        <!-- 2. BATTLE ARENA SCREEN -->
+        <div id="battleScreen" class="hidden flex-col gap-4">
+
+            <!-- Battle Arena HUD (Health & Scores) -->
+            <div class="grid grid-cols-12 gap-2 md:gap-4 items-center bg-slate-900/90 rounded-2xl p-3 md:p-5 border border-slate-700/80 shadow-xl">
+                <!-- Team 1 Card -->
+                <div id="team1HUD" class="col-span-5 bg-emerald-950/40 p-3 rounded-xl border border-emerald-500/30 relative overflow-hidden transition-all duration-300">
+                    <div class="flex items-center gap-2 md:gap-3 mb-2">
+                        <span class="text-2xl md:text-4xl animate-bounce" id="team1Avatar">🦅</span>
+                        <div class="min-w-0 flex-1">
+                            <h3 id="team1NameDisplay" class="font-bold text-emerald-400 text-sm md:text-lg truncate">Kelompok 1</h3>
+                            <p class="text-xs text-slate-300 font-bold">Skor: <span id="team1Score" class="text-amber-400 font-extrabold text-sm md:text-base">0</span></p>
+                        </div>
+                    </div>
+                    <!-- HP Bar -->
+                    <div class="w-full bg-slate-950 rounded-full h-3.5 md:h-5 p-0.5 border border-emerald-500/30 relative">
+                        <div id="team1HpBar" class="bg-gradient-to-r from-emerald-500 to-green-400 h-full rounded-full transition-all duration-500 w-full"></div>
+                        <span id="team1HpText" class="absolute inset-0 flex items-center justify-center text-[10px] md:text-xs font-black text-white drop-shadow">100 HP</span>
+                    </div>
+                </div>
+
+                <!-- VS Badge & Round Info -->
+                <div class="col-span-2 text-center flex flex-col items-center justify-center">
+                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-tr from-amber-500 to-red-500 flex items-center justify-center font-black title-font text-slate-950 text-sm md:text-xl shadow-lg border-2 border-white/20">
+                        VS
+                    </div>
+                    <div class="mt-1 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] md:text-xs text-amber-300 font-bold whitespace-nowrap">
+                        Ronde <span id="roundNumber">1</span> / 15
+                    </div>
+                </div>
+
+                <!-- Team 2 Card -->
+                <div id="team2HUD" class="col-span-5 bg-rose-950/40 p-3 rounded-xl border border-rose-500/30 relative overflow-hidden transition-all duration-300">
+                    <div class="flex items-center gap-2 md:gap-3 mb-2 flex-row-reverse text-right">
+                        <span class="text-2xl md:text-4xl animate-bounce" id="team2Avatar">🐯</span>
+                        <div class="min-w-0 flex-1">
+                            <h3 id="team2NameDisplay" class="font-bold text-rose-400 text-sm md:text-lg truncate">Kelompok 2</h3>
+                            <p class="text-xs text-slate-300 font-bold">Skor: <span id="team2Score" class="text-amber-400 font-extrabold text-sm md:text-base">0</span></p>
+                        </div>
+                    </div>
+                    <!-- HP Bar -->
+                    <div class="w-full bg-slate-950 rounded-full h-3.5 md:h-5 p-0.5 border border-rose-500/30 relative">
+                        <div id="team2HpBar" class="bg-gradient-to-r from-rose-500 to-red-400 h-full rounded-full transition-all duration-500 w-full"></div>
+                        <span id="team2HpText" class="absolute inset-0 flex items-center justify-center text-[10px] md:text-xs font-black text-white drop-shadow">100 HP</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Turn Banner -->
+            <div id="turnBanner" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-3 rounded-2xl font-bold text-center text-sm md:text-base shadow-lg flex items-center justify-center gap-2 transition-all duration-300">
+                <i class="fa-solid fa-crosshairs text-amber-300 animate-spin"></i>
+                <span>GILIRAN MENGAMBIL SERANGAN: <span id="currentTurnTeamName" class="text-amber-300 font-extrabold underline decoration-amber-400 underline-offset-4">Kelompok 1</span></span>
+            </div>
+
+            <!-- QUESTION CARD ARENA -->
+            <div class="glass-card rounded-2xl p-4 md:p-6 shadow-2xl relative border border-slate-700">
+                
+                <!-- Question Type Tag & Header -->
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-700/80">
+                    <span id="questionTypeBadge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        <i class="fa-solid fa-puzzle-piece mr-1"></i> Drag & Drop
+                    </span>
+                    <span class="text-xs text-slate-400 font-semibold">
+                        Soal Ke-<span id="teamQuestionIndex">1</span> / 15
+                    </span>
+                </div>
+
+                <!-- Question Text -->
+                <h3 id="questionText" class="text-base md:text-xl font-bold text-emerald-100 mb-4 leading-relaxed">
+                    Sedang memuat soal...
+                </h3>
+
+                <!-- Instruction Box -->
+                <div id="instructionBox" class="bg-slate-800/80 rounded-xl p-2.5 md:p-3 mb-5 border border-slate-700 text-xs md:text-sm text-slate-300 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-amber-400 text-lg flex-shrink-0"></i>
+                    <span id="instructionText">Seret atau ketuk item lalu letakkan pada tempat yang benar.</span>
+                </div>
+
+                <!-- INTERACTIVE CONTAINER (Swaps depending on question type) -->
+                
+                <!-- A. DRAG AND DROP CONTAINER -->
+                <div id="dragDropArea" class="hidden flex-col gap-6">
+                    <!-- Drop Target Slots Area -->
+                    <div>
+                        <p class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">
+                            <i class="fa-solid fa-arrow-down-short-wide mr-1"></i> Area Susunan Jawaban:
+                        </p>
+                        <div id="dropSlotsContainer" class="flex flex-wrap items-center justify-center gap-2 md:gap-3 p-4 bg-slate-900/90 rounded-2xl border-2 border-dashed border-slate-600 min-h-[100px]">
+                            <!-- Drop slots injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Available Items Area -->
+                    <div>
+                        <p class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">
+                            <i class="fa-solid fa-hand-pointer mr-1"></i> Pilihan Makhluk Hidup / Peran (Tarik atau Ketuk):
+                        </p>
+                        <div id="dragItemsContainer" class="flex flex-wrap items-center justify-center gap-2 md:gap-3 p-4 bg-slate-800/60 rounded-2xl border border-slate-700 min-h-[80px]">
+                            <!-- Drag items injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Action Button for Drag & Drop -->
+                    <button id="submitDragBtn" onclick="checkDragAnswer()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold title-font text-lg shadow-lg transition active:scale-95 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-check"></i>
+                        PERIKSA JAWABAN
+                    </button>
+                </div>
+
+                <!-- B. MULTIPLE CHOICE CONTAINER -->
+                <div id="multipleChoiceArea" class="hidden grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                    <!-- 4 Option Buttons generated by JS -->
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 3. FEEDBACK MODAL OVERLAY -->
+        <div id="feedbackModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+            <div class="glass-card max-w-lg w-full rounded-3xl p-6 border-2 text-center shadow-2xl relative animate-float">
+                <div id="feedbackIconContainer" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 shadow-xl">
+                    <!-- Icon JS injected -->
+                </div>
+
+                <h3 id="feedbackTitle" class="title-font text-2xl md:text-3xl font-bold mb-2">
+                    BENAR!
+                </h3>
+                <p id="feedbackSubtitle" class="text-sm font-semibold text-slate-300 mb-4">
+                    Serangan berhasil mengenai musuh!
+                </p>
+
+                <!-- Educational Explanation Box -->
+                <div class="bg-slate-900/90 rounded-2xl p-4 text-left border border-slate-700 mb-6 max-h-48 overflow-y-auto">
+                    <p class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-graduation-cap text-base"></i> Penjelasan Edukasi:
+                    </p>
+                    <p id="feedbackExplanation" class="text-xs md:text-sm text-slate-200 leading-relaxed">
+                        Penjelasan soal...
+                    </p>
+                </div>
+
+                <button onclick="nextTurn()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-emerald-400 text-slate-950 font-bold title-font text-lg shadow-lg hover:scale-105 transition active:scale-95">
+                    LANJUTKAN PERTANDINGAN <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 4. FINAL RESULT SCREEN -->
+        <div id="resultScreen" class="hidden glass-card rounded-3xl p-6 md:p-10 text-center max-w-2xl mx-auto my-auto shadow-2xl relative border border-amber-500/40">
+            <div class="inline-block p-4 rounded-full bg-amber-500/20 border-2 border-amber-400 mb-4 animate-bounce">
+                <i class="fa-solid fa-trophy text-5xl text-amber-300"></i>
+            </div>
+
+            <h2 class="title-font text-3xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-emerald-300 to-teal-200 mb-2">
+                PEMENANG PERTANDINGAN!
+            </h2>
+            <p id="winnerText" class="text-xl font-bold text-emerald-400 mb-6">Kelompok 1 Memenangkan Battle!</p>
+
+            <!-- Final Score Board -->
+            <div class="grid grid-cols-2 gap-4 bg-slate-900/80 p-4 rounded-2xl border border-slate-700 mb-8">
+                <div class="p-3 bg-slate-800/80 rounded-xl border border-emerald-500/30">
+                    <p id="finalTeam1Name" class="font-bold text-emerald-400 text-sm truncate">Kelompok 1</p>
+                    <p id="finalTeam1Score" class="text-2xl font-black text-amber-300">1500 Pts</p>
+                    <p id="finalTeam1Hp" class="text-xs text-slate-400">Sisa HP: 80%</p>
+                </div>
+                <div class="p-3 bg-slate-800/80 rounded-xl border border-rose-500/30">
+                    <p id="finalTeam2Name" class="font-bold text-rose-400 text-sm truncate">Kelompok 2</p>
+                    <p id="finalTeam2Score" class="text-2xl font-black text-amber-300">1200 Pts</p>
+                    <p id="finalTeam2Hp" class="text-xs text-slate-400">Sisa HP: 50%</p>
+                </div>
+            </div>
+
+            <button onclick="restartGame()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-amber-400 text-slate-950 font-bold title-font text-xl shadow-xl hover:scale-105 active:scale-95 transition">
+                <i class="fa-solid fa-rotate-right mr-2"></i> MAIN LAGI
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-3 text-xs text-slate-400 border-t border-slate-800 bg-slate-950/60 backdrop-blur-sm">
+        Media Pembelajaran Interaktif IPA Kelas 5 SD &bull; Tematik Rantai & Jaring-Jaring Makanan (15 Soal Battle)
+    </footer>
+
+    <script>
+        // QUESTION DATASET (15 Questions for Team 1, 15 Questions for Team 2 = 30 total questions)
+        const team1Questions = [
+            {
+                type: 'drag',
+                title: 'Rantai Makanan Sawah',
+                instruction: 'Urutkan rantai makanan ekosistem sawah di bawah dari Produsen hingga Konsumen Puncak!',
+                items: [
+                    { id: 'padi', text: '🌾 Padi' },
+                    { id: 'belalang', text: '🦗 Belalang' },
+                    { id: 'katak', text: '🐸 Katak' },
+                    { id: 'ular', text: '🐍 Ular' },
+                    { id: 'elang', text: '🦅 Elang' }
+                ],
+                correctOrder: ['padi', 'belalang', 'katak', 'ular', 'elang'],
+                explanation: 'Rantai makanan sawah: **Padi** (Produsen) ➔ **Belalang** (Konsumen I/Herbivora) ➔ **Katak** (Konsumen II) ➔ **Ular** (Konsumen III) ➔ **Elang** (Konsumen IV/Puncak).'
+            },
+            {
+                type: 'mcq',
+                title: 'Peran Produsen dalam Ekosistem',
+                question: 'Mengapa tumbuhan hijau dikategorikan sebagai PRODUSEN dalam rantai makanan?',
+                options: [
+                    { text: 'A. Karena memburu hewan kecil di tanah', correct: false },
+                    { text: 'B. Karena dapat membuat makanan sendiri melalui fotosintesis', correct: true },
+                    { text: 'C. Karena menguraikan sampah organik', correct: false },
+                    { text: 'D. Karena menyerap nutrisi dari bangkai hewan', correct: false }
+                ],
+                explanation: 'Tumbuhan hijau adalah **Produsen** karena merupakan satu-satunya makhluk hidup yang mampu memproduksi makanan sendiri memanfaatkan energi matahari (fotosintesis).'
+            },
+            {
+                type: 'drag',
+                title: 'Pengelompokan Produsen & Herbivora',
+                instruction: 'Pasangkan organisme berikut ke dalam kotak kategori yang tepat!',
+                groupedTarget: true,
+                categories: [
+                    { id: 'produsen', name: '🌱 PRODUSEN', max: 2 },
+                    { id: 'konsumen1', name: '🐰 KONSUMEN I (Herbivora)', max: 2 }
+                ],
+                items: [
+                    { id: 'padi', text: '🌾 Padi', cat: 'produsen' },
+                    { id: 'rumput', text: '🌿 Rumput', cat: 'produsen' },
+                    { id: 'kelinci', text: '🐇 Kelinci', cat: 'konsumen1' },
+                    { id: 'ulat', text: '🐛 Ulat', cat: 'konsumen1' }
+                ],
+                explanation: 'Padi & Rumput adalah **Produsen**, sedangkan Kelinci & Ulat adalah **Konsumen I** (pemakan tumbuhan/herbivora).'
+            },
+            {
+                type: 'mcq',
+                title: 'Dampak Keseimbangan Ekosistem Sawah',
+                question: 'Jika seluruh Ular di sawah punah karena diburu, apa dampak langsung bagi para petani?',
+                options: [
+                    { text: 'A. Tanaman padi tumbuh lebih subur', correct: false },
+                    { text: 'B. Populasi Tikus melonjak pesat dan merusak padi', correct: true },
+                    { text: 'C. Jumlah Elang bertambah sangat cepat', correct: false },
+                    { text: 'D. Belalang akan langsung mati', correct: false }
+                ],
+                explanation: 'Ular adalah predator alami bagi tikus. Tanpa ular, populasi **tikus akan melonjak pesat** sehingga merusak panen padi petani.'
+            },
+            {
+                type: 'drag',
+                title: 'Rantai Makanan Ekosistem Laut',
+                instruction: 'Urutkan aliran energi rantai makanan di laut berikut dari mikroskopis hingga predator!',
+                items: [
+                    { id: 'fito', text: '🌱 Fitoplankton' },
+                    { id: 'zoo', text: '🦐 Zooplankton' },
+                    { id: 'ikankecil', text: '🐟 Ikan Kecil' },
+                    { id: 'ikanbesar', text: '🦈 Ikan Hiu' }
+                ],
+                correctOrder: ['fito', 'zoo', 'ikankecil', 'ikanbesar'],
+                explanation: 'Di laut: **Fitoplankton** (Produsen) ➔ **Zooplankton** (Konsumen I) ➔ **Ikan Kecil** (Konsumen II) ➔ **Ikan Hiu** (Konsumen Puncak).'
+            },
+            {
+                type: 'mcq',
+                title: 'Peran Dekomposer (Pengurai)',
+                question: 'Bakteri dan Jamur berperan penting sebagai Pengurai (Dekomposer). Apa manfaat utama hasil penguraian ini?',
+                options: [
+                    { text: 'A. Mengubah udara dingin menjadi panas', correct: false },
+                    { text: 'B. Mengembalikan zat hara/nutrisi ke dalam tanah untuk tumbuhan', correct: true },
+                    { text: 'C. Menghancurkan sinar matahari', correct: false },
+                    { text: 'D. Menghasilkan makanan secara otomatis bagi elang', correct: false }
+                ],
+                explanation: 'Pengurai mengubah sisa-sisa bangkai tumbuhan/hewan menjadi **zat hara (humus/nutrisi)** di dalam tanah yang menyuburkan tanaman produsen.'
+            },
+            {
+                type: 'drag',
+                title: 'Rantai Makanan Hutan Tropis',
+                instruction: 'Susun rantai makanan di hutan berikut ini!',
+                items: [
+                    { id: 'rumput', text: '🌿 Rumput' },
+                    { id: 'rusa', text: '🦌 Rusa' },
+                    { id: 'serigala', text: '🐺 Serigala' },
+                    { id: 'jamur', text: '🍄 Jamur' }
+                ],
+                correctOrder: ['rumput', 'rusa', 'serigala', 'jamur'],
+                explanation: 'Urutan rantai makanan hutan: **Rumput** (Produsen) ➔ **Rusa** (Konsumen I) ➔ **Serigala** (Konsumen II) ➔ **Jamur** (Pengurai).'
+            },
+            {
+                type: 'mcq',
+                title: 'Pengertian Pemakan Tumbuhan',
+                question: 'Hewan pemakan tumbuhan yang menduduki tingkat Konsumen I disebut sebagai hewan...',
+                options: [
+                    { text: 'A. Karnivora', correct: false },
+                    { text: 'B. Herbivora', correct: true },
+                    { text: 'C. Omnivora', correct: false },
+                    { text: 'D. Insektivora', correct: false }
+                ],
+                explanation: 'Hewan pemakan tumbuhan disebut **Herbivora**, contohnya kelinci, sapi, kambing, ulat, dan belalang.'
+            },
+            {
+                type: 'drag',
+                title: 'Kelompok Karnivora & Omnivora',
+                instruction: 'Pisahkan hewan di bawah ini berdasarkan jenis makanannya!',
+                groupedTarget: true,
+                categories: [
+                    { id: 'karnivora', name: '🥩 KARNIVORA (Pemakan Daging)', max: 2 },
+                    { id: 'omnivora', name: '🥗 OMNIVORA (Pemakan Segala)', max: 2 }
+                ],
+                items: [
+                    { id: 'singa', text: '🦁 Singa', cat: 'karnivora' },
+                    { id: 'elang', text: '🦅 Elang', cat: 'karnivora' },
+                    { id: 'ayam', text: '🐓 Ayam', cat: 'omnivora' },
+                    { id: 'monyet', text: '🐒 Monyet', cat: 'omnivora' }
+                ],
+                explanation: 'Singa & Elang hanya memakan daging (**Karnivora**), sedangkan Ayam & Monyet memakan tumbuhan dan hewan lain (**Omnivora**).'
+            },
+            {
+                type: 'mcq',
+                title: 'Sumber Energi Utama Bumi',
+                question: 'Darimanakah sumber energi utama yang pertama kali memasuki seluruh sistem rantai makanan?',
+                options: [
+                    { text: 'A. Air Laut', correct: false },
+                    { text: 'B. Cahaya Matahari', correct: true },
+                    { text: 'C. Angin Gurun', correct: false },
+                    { text: 'D. Panas Bumi', correct: false }
+                ],
+                explanation: 'Cahaya **Matahari** adalah sumber energi utama bagi tumbuhan hijau untuk melakukan fotosintesis dan mengalirkan energi ke seluruh rantai makanan.'
+            },
+            {
+                type: 'drag',
+                title: 'Rantai Makanan Kebun Sekolah',
+                instruction: 'Urutkan rantai makanan ekosistem kebun berikut ini!',
+                items: [
+                    { id: 'pohon', text: '🌳 Pohon Pisang' },
+                    { id: 'ulat', text: '🐛 Ulat' },
+                    { id: 'burung', text: '🐦 Burung Kecil' },
+                    { id: 'kucing', text: '🐈 Kucing Kebun' }
+                ],
+                correctOrder: ['pohon', 'ulat', 'burung', 'kucing'],
+                explanation: 'Di kebun: **Pohon Pisang** ➔ **Ulat** (Konsumen I) ➔ **Burung Kecil** (Konsumen II) ➔ **Kucing Kebun** (Konsumen III).'
+            },
+            {
+                type: 'mcq',
+                title: 'Definisi Jaring-Jaring Makanan',
+                question: 'Pernyataan mana yang paling tepat mengenai Jaring-Jaring Makanan?',
+                options: [
+                    { text: 'A. Hanya terdiri dari satu garis lurus makanan', correct: false },
+                    { text: 'B. Kumpulan dari beberapa rantai makanan yang saling berhubungan dalam ekosistem', correct: true },
+                    { text: 'C. Proses penguraian tanah oleh cacing saja', correct: false },
+                    { text: 'D. Dibuat khusus hanya untuk hewan laut', correct: false }
+                ],
+                explanation: 'Jaring-jaring makanan adalah kumpulan dari **beberapa rantai makanan yang saling terkait/berhubungan** dalam suatu ekosistem.'
+            },
+            {
+                type: 'drag',
+                title: 'Urutan Tingkatan Trofik',
+                instruction: 'Urutkan peran tingkatan rantai makanan secara umum dari bawah ke atas!',
+                items: [
+                    { id: 'pro', text: '🌱 Produsen' },
+                    { id: 'k1', text: '🐇 Konsumen I' },
+                    { id: 'k2', text: '🐍 Konsumen II' },
+                    { id: 'peng', text: '🍄 Pengurai' }
+                ],
+                correctOrder: ['pro', 'k1', 'k2', 'peng'],
+                explanation: 'Urutan trofik standar: **Produsen** ➔ **Konsumen I** ➔ **Konsumen II** ➔ **Pengurai**.'
+            },
+            {
+                type: 'mcq',
+                title: 'Dampak Kepunahan Produsen',
+                question: 'Apa yang akan terjadi pada seluruh ekosistem jika populasi produsen (tumbuhan) musnah secara mendadak?',
+                options: [
+                    { text: 'A. Konsumen I bertambah pesat', correct: false },
+                    { text: 'B. Seluruh rantai makanan akan terganggu dan runtuh karena krisis energi', correct: true },
+                    { text: 'C. Pengurai langsung berubah jadi produsen', correct: false },
+                    { text: 'D. Hewan karnivora menjadi semakin kuat', correct: false }
+                ],
+                explanation: 'Tanpa produsen, Konsumen I akan mati kelaparan, dan akibatnya Konsumen II & III juga tidak mendapatkan makanan sehingga ekosistem runtuh.'
+            },
+            {
+                type: 'drag',
+                title: 'Rantai Makanan Kolam Air Tawar',
+                instruction: 'Urutkan rantai makanan ekosistem kolam di bawah ini!',
+                items: [
+                    { id: 'teratai', text: '🪷 Tanaman Teratai' },
+                    { id: 'keong', text: '🐌 Keong Mas' },
+                    { id: 'ikan', text: '🐟 Ikan Gurame' },
+                    { id: 'bebek', text: '🦆 Bebek / Bangau' }
+                ],
+                correctOrder: ['teratai', 'keong', 'ikan', 'bebek'],
+                explanation: 'Di kolam: **Teratai** (Produsen) ➔ **Keong Mas** (Konsumen I) ➔ **Ikan Gurame** (Konsumen II) ➔ **Bebek/Bangau** (Konsumen Puncak).'
+            }
+        ];
+
+        const team2Questions = [
+            {
+                type: 'drag',
+                title: 'Rantai Makanan Padang Rumput',
+                instruction: 'Urutkan rantai makanan ekosistem padang rumput (savana) berikut ini!',
+                items: [
+                    { id: 'rumput', text: '🌾 Rumput Savana' },
+                    { id: 'belalang', text: '🦗 Belalang' },
+                    { id: 'kadal', text: '🦎 Kadal' },
+                    { id: 'burung', text: '🦉 Burung Hantu' }
+                ],
+                correctOrder: ['rumput', 'belalang', 'kadal', 'burung'],
+                explanation: 'Di padang rumput: **Rumput Savana** ➔ **Belalang** (Konsumen I) ➔ **Kadal** (Konsumen II) ➔ **Burung Hantu** (Konsumen III).'
+            },
+            {
+                type: 'mcq',
+                title: 'Identifikasi Konsumen Sekunder',
+                question: 'Dalam rantai makanan: Jagung ➔ Ayam ➔ Ular ➔ Elang. Manakah yang bertindak sebagai KONSUMEN SEKUNDER (Konsumen II)?',
+                options: [
+                    { text: 'A. Jagung', correct: false },
+                    { text: 'B. Ayam', correct: false },
+                    { text: 'C. Ular', correct: true },
+                    { text: 'D. Elang', correct: false }
+                ],
+                explanation: 'Jagung (Produsen) ➔ Ayam (Konsumen I) ➔ **Ular (Konsumen II/Sekunder)** ➔ Elang (Konsumen III/Puncak).'
+            },
+            {
+                type: 'drag',
+                title: 'Klasifikasi Herbivora & Karnivora',
+                instruction: 'Kelompokkan hewan pemakan berikut ke kategori yang benar!',
+                groupedTarget: true,
+                categories: [
+                    { id: 'herbivora', name: '🌾 HERBIVORA (Pemakan Tumbuhan)', max: 2 },
+                    { id: 'karnivora', name: '🥩 KARNIVORA (Pemakan Daging)', max: 2 }
+                ],
+                items: [
+                    { id: 'sapi', text: '🐄 Sapi', cat: 'herbivora' },
+                    { id: 'kambing', text: '🐐 Kambing', cat: 'herbivora' },
+                    { id: 'harimau', text: '🐅 Harimau', cat: 'karnivora' },
+                    { id: 'hiu', text: '🦈 Ikan Hiu', cat: 'karnivora' }
+                ],
+                explanation: 'Sapi & Kambing memakan tanaman (**Herbivora**), Harimau & Ikan Hiu memakan daging (**Karnivora**).'
+            },
+            {
+                type: 'mcq',
+                title: 'Perbedaan Rantai & Jaring Makanan',
+                question: 'Apa perbedaan utama antara Rantai Makanan dengan Jaring-Jaring Makanan?',
+                options: [
+                    { text: 'A. Rantai makanan berbentuk urutan tunggal, sedangkan jaring makanan terdiri dari gabungan banyak rantai makanan', correct: true },
+                    { text: 'B. Jaring makanan tidak memerlukan matahari', correct: false },
+                    { text: 'C. Rantai makanan hanya ada di air jernih', correct: false },
+                    { text: 'D. Jaring makanan tidak punya pengurai', correct: false }
+                ],
+                explanation: 'Rantai makanan adalah satu lintasan makan-memakan sederhana, sedangkan **jaring-jaring makanan** adalah jejaring kompleks dari banyak rantai makanan.'
+            },
+            {
+                type: 'drag',
+                title: 'Rantai Makanan Danau Air Tawar',
+                instruction: 'Urutkan rantai makanan ekosistem danau dari produsen hingga predator!',
+                items: [
+                    { id: 'ganggang', text: '🌿 Ganggang Air' },
+                    { id: 'udang', text: '🦐 Udang Kecil' },
+                    { id: 'ikan', text: '🐟 Ikan Mas' },
+                    { id: 'pelikan', text: '🦤 Burung Pelikan' }
+                ],
+                correctOrder: ['ganggang', 'udang', 'ikan', 'pelikan'],
+                explanation: 'Di danau: **Ganggang Air** ➔ **Udang Kecil** (Konsumen I) ➔ **Ikan Mas** (Konsumen II) ➔ **Burung Pelikan** (Konsumen Puncak).'
+            },
+            {
+                type: 'mcq',
+                title: 'Peran Fitoplankton',
+                question: 'Di dalam ekosistem laut atau lautan luas, apakah peran utama dari Fitoplankton?',
+                options: [
+                    { text: 'A. Sebagai Konsumen III pemangsa hiu', correct: false },
+                    { text: 'B. Sebagai Produsen utama penghasil oksigen dan makanan', correct: true },
+                    { text: 'C. Sebagai Pengurai bangkai paus', correct: false },
+                    { text: 'D. Sebagai tempat berlindung batu karang', correct: false }
+                ],
+                explanation: 'Fitoplankton adalah tumbuhan mikro di perairan yang bertindak sebagai **Produsen utama** di lautan melalui fotosintesis.'
+            },
+            {
+                type: 'drag',
+                title: 'Pengelompokan Produsen & Pengurai',
+                instruction: 'Kelompokkan mikroorganisme dan tumbuhan di bawah ini!',
+                groupedTarget: true,
+                categories: [
+                    { id: 'produsen', name: '🌱 PRODUSEN', max: 2 },
+                    { id: 'pengurai', name: '🍄 DEKOMPOSER (Pengurai)', max: 2 }
+                ],
+                items: [
+                    { id: 'eceng', text: '🪷 Eceng Gondok', cat: 'produsen' },
+                    { id: 'jagung', text: '🌽 Tumbuhan Jagung', cat: 'produsen' },
+                    { id: 'jamur', text: '🍄 Jamur Lapuk', cat: 'pengurai' },
+                    { id: 'bakteri', text: '🦠 Bakteri Tanah', cat: 'pengurai' }
+                ],
+                explanation: 'Eceng Gondok & Jagung adalah **Produsen**, sedangkan Jamur & Bakteri adalah **Pengurai (Dekomposer)**.'
+            },
+            {
+                type: 'mcq',
+                title: 'Ledakan Hama Belalang',
+                question: 'Jika populasi burung pemakan serangga habis di ladang jagung, apa yang akan terjadi?',
+                options: [
+                    { text: 'A. Hama belalang bertambah banyak dan jagung gagal panen', correct: true },
+                    { text: 'B. Tanaman jagung bertambah tinggi pesat', correct: false },
+                    { text: 'C. Belalang akan langsung musnah', correct: false },
+                    { text: 'D. Tanah ladang menjadi lebih subur secara cepat', correct: false }
+                ],
+                explanation: 'Burung memangsa belalang. Tanpa burung, belalang akan berkembang tak terkendali (**ledakan hama**) dan menghabiskan jagung.'
+            },
+            {
+                type: 'drag',
+                title: 'Rantai Makanan Sungai',
+                instruction: 'Urutkan rantai makanan ekosistem sungai di bawah ini!',
+                items: [
+                    { id: 'lumut', text: '🌱 Lumut Sungai' },
+                    { id: 'ikan1', text: '🐟 Ikan Kecil' },
+                    { id: 'berang', text: '🦦 Berang-Berang' },
+                    { id: 'buaya', text: '🐊 Buaya' }
+                ],
+                correctOrder: ['lumut', 'ikan1', 'berang', 'buaya'],
+                explanation: 'Di sungai: **Lumut** (Produsen) ➔ **Ikan Kecil** (Konsumen I) ➔ **Berang-berang** (Konsumen II) ➔ **Buaya** (Konsumen Puncak).'
+            },
+            {
+                type: 'mcq',
+                title: 'Konsumen Puncak (Apex Predator)',
+                question: 'Mengapa Elang atau Singa sering disebut sebagai KONSUMEN PUNCAK?',
+                options: [
+                    { text: 'A. Karena suka memakan tumbuhan hijau', correct: false },
+                    { text: 'B. Karena tidak ada pemangsa lain yang berburu mereka saat masih hidup', correct: true },
+                    { text: 'C. Karena berukuran paling kecil dalam ekosistem', correct: false },
+                    { text: 'D. Karena membantu pembuatan pupuk tanah', correct: false }
+                ],
+                explanation: 'Konsumen Puncak adalah predator di tingkat teratas rantai makanan yang **tidak lagi dijangkau/dimangsa** oleh hewan lain saat hidup.'
+            },
+            {
+                type: 'drag',
+                title: 'Lengkapi Rantai Makanan Sawah Rumpang',
+                instruction: 'Isi posisi yang kosong: Padi ➔ [...] ➔ [...] ➔ Elang',
+                items: [
+                    { id: 'tikus', text: '🐀 Tikus' },
+                    { id: 'ular', text: '🐍 Ular' }
+                ],
+                correctOrder: ['tikus', 'ular'],
+                explanation: 'Urutan yang lengkap adalah: Padi ➔ **Tikus** (Konsumen I) ➔ **Ular** (Konsumen II) ➔ Elang (Konsumen Puncak).'
+            },
+            {
+                type: 'mcq',
+                title: 'Contoh Hewan Omnivora',
+                question: 'Hewan pemakan tumbuhan sekaligus daging hewan lain disebut Omnivora. Contoh hewan omnivora di sekitar kita adalah...',
+                options: [
+                    { text: 'A. Sapi dan Kerbau', correct: false },
+                    { text: 'B. Ayam dan Bebek', correct: true },
+                    { text: 'C. Harimau dan Serigala', correct: false },
+                    { text: 'D. Ular dan Elang', correct: false }
+                ],
+                explanation: 'Ayam dan bebek memakan biji-bijian/tumbuhan sekaligus cacing/serangga, sehingga dikategorikan sebagai **Omnivora**.'
+            },
+            {
+                type: 'drag',
+                title: 'Kelompokkan Konsumen I & Konsumen II',
+                instruction: 'Pisahkan hewan di bawah sesuai tingkat konsumernya!',
+                groupedTarget: true,
+                categories: [
+                    { id: 'k1', name: '🐛 KONSUMEN I (Pemakan Produsen)', max: 2 },
+                    { id: 'k2', name: '🐸 KONSUMEN II (Pemakan Hewan Lain)', max: 2 }
+                ],
+                items: [
+                    { id: 'belalang', text: '🦗 Belalang', cat: 'k1' },
+                    { id: 'uyl', text: '🐛 Ulat Daun', cat: 'k1' },
+                    { id: 'katak', text: '🐸 Katak', cat: 'k2' },
+                    { id: 'kadal', text: '🦎 Kadal Kebun', cat: 'k2' }
+                ],
+                explanation: 'Belalang & Ulat adalah **Konsumen I**, sedangkan Katak & Kadal memakan serangga tersebut (**Konsumen II**).'
+            },
+            {
+                type: 'mcq',
+                title: 'Konsep Ketidakseimbangan Ekosistem',
+                question: 'Apakah yang dimaksud dengan Ekosistem yang Seimbang?',
+                options: [
+                    { text: 'A. Jumlah konsumen puncak lebih banyak dari jumlah produsen', correct: false },
+                    { text: 'B. Jumlah komponen produsen, konsumen, dan pengurai serasi serta tidak ada populasi yang punah/terlalu berlebihan', correct: true },
+                    { text: 'C. Seluruh tumbuhan diubah menjadi semen bangunan', correct: false },
+                    { text: 'D. Semua hewan dikurung di dalam kandang', correct: false }
+                ],
+                explanation: 'Ekosistem seimbang adalah kondisi di mana populasi **produsen, konsumen, dan pengurai serasi dan terjaga proporsinya**.'
+            },
+            {
+                type: 'drag',
+                title: 'Rantai Makanan Ekosistem Pantai / Pesisir',
+                instruction: 'Urutkan rantai makanan ekosistem pesisir berikut!',
+                items: [
+                    { id: 'rumputlaut', text: '🌿 Rumput Laut' },
+                    { id: 'bulubabi', text: '🦔 Bulu Babi' },
+                    { id: 'bintang', text: '⭐ Bintang Laut' },
+                    { id: 'beranglaut', text: '🦦 Berang-Berang Laut' }
+                ],
+                correctOrder: ['rumputlaut', 'bulubabi', 'bintang', 'beranglaut'],
+                explanation: 'Di pesisir: **Rumput Laut** (Produsen) ➔ **Bulu Babi** (Konsumen I) ➔ **Bintang Laut** (Konsumen II) ➔ **Berang-Berang Laut** (Konsumen Puncak).'
+            }
+        ];
+
+        // GAME STATE
+        let gameState = {
+            team1: { name: 'Kelompok 1', score: 0, hp: 100, questionIndex: 0 },
+            team2: { name: 'Kelompok 2', score: 0, hp: 100, questionIndex: 0 },
+            currentTurn: 1, // 1 for Team 1, 2 for Team 2
+            round: 1, // Round 1 to 15
+            selectedItemForPlacement: null,
+            dragAnswersState: [], // Array for drag answers
+            soundEnabled: true
+        };
+
+        // SOUND EFFECTS SYNTHESIZER (Tone.js)
+        function playSound(type) {
+            if (!gameState.soundEnabled) return;
+            try {
+                if (type === 'correct') {
+                    const synth = new Tone.Synth().toDestination();
+                    synth.triggerAttackRelease("C5", "8n");
+                    setTimeout(() => synth.triggerAttackRelease("E5", "8n"), 100);
+                    setTimeout(() => synth.triggerAttackRelease("G5", "8n"), 200);
+                } else if (type === 'wrong') {
+                    const synth = new Tone.Synth().toDestination();
+                    synth.triggerAttackRelease("G3", "8n");
+                    setTimeout(() => synth.triggerAttackRelease("C3", "8n"), 150);
+                } else if (type === 'win') {
+                    const synth = new Tone.PolySynth().toDestination();
+                    synth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "4n");
+                } else if (type === 'select') {
+                    const synth = new Tone.MembraneSynth().toDestination();
+                    synth.triggerAttackRelease("C2", "16n");
+                }
+            } catch (e) {
+                console.log("Audio play error", e);
+            }
+        }
+
+        function toggleAudio() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            if (gameState.soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high text-lg';
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-lg text-slate-500';
+            }
+        }
+
+        function startGame() {
+            const name1 = document.getElementById('team1Input').value.trim() || 'Kelompok 1';
+            const name2 = document.getElementById('team2Input').value.trim() || 'Kelompok 2';
+
+            gameState.team1.name = name1;
+            gameState.team2.name = name2;
+            gameState.team1.score = 0;
+            gameState.team2.score = 0;
+            gameState.team1.hp = 100;
+            gameState.team2.hp = 100;
+            gameState.team1.questionIndex = 0;
+            gameState.team2.questionIndex = 0;
+            gameState.currentTurn = 1;
+            gameState.round = 1;
+
+            document.getElementById('team1NameDisplay').innerText = name1;
+            document.getElementById('team2NameDisplay').innerText = name2;
+
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('battleScreen').classList.remove('hidden');
+            document.getElementById('battleScreen').classList.add('flex');
+
+            updateHUD();
+            loadCurrentQuestion();
+        }
+
+        function restartGameConfirm() {
+            if (confirm("Apakah Anda yakin ingin mengulang permainan dari awal?")) {
+                restartGame();
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('battleScreen').classList.add('hidden');
+            document.getElementById('battleScreen').classList.remove('flex');
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+
+        function updateHUD() {
+            // Scores
+            document.getElementById('team1Score').innerText = gameState.team1.score;
+            document.getElementById('team2Score').innerText = gameState.team2.score;
+
+            // Health Bars
+            document.getElementById('team1HpBar').style.width = gameState.team1.hp + '%';
+            document.getElementById('team1HpText').innerText = gameState.team1.hp + ' HP';
+            document.getElementById('team2HpBar').style.width = gameState.team2.hp + '%';
+            document.getElementById('team2HpText').innerText = gameState.team2.hp + ' HP';
+
+            // Round Number
+            document.getElementById('roundNumber').innerText = gameState.round;
+
+            // Active Turn Styling
+            const turnBanner = document.getElementById('turnBanner');
+            const turnName = document.getElementById('currentTurnTeamName');
+            const t1Hud = document.getElementById('team1HUD');
+            const t2Hud = document.getElementById('team2HUD');
+
+            if (gameState.currentTurn === 1) {
+                turnName.innerText = gameState.team1.name;
+                turnBanner.className = 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-3 rounded-2xl font-bold text-center text-sm md:text-base shadow-lg flex items-center justify-center gap-2 transition-all duration-300';
+                t1Hud.classList.add('ring-2', 'ring-emerald-400', 'scale-105');
+                t2Hud.classList.remove('ring-2', 'ring-rose-400', 'scale-105');
+            } else {
+                turnName.innerText = gameState.team2.name;
+                turnBanner.className = 'bg-gradient-to-r from-rose-600 to-red-600 text-white p-3 rounded-2xl font-bold text-center text-sm md:text-base shadow-lg flex items-center justify-center gap-2 transition-all duration-300';
+                t2Hud.classList.add('ring-2', 'ring-rose-400', 'scale-105');
+                t1Hud.classList.remove('ring-2', 'ring-emerald-400', 'scale-105');
+            }
+        }
+
+        function getCurrentQuestion() {
+            if (gameState.currentTurn === 1) {
+                return team1Questions[gameState.team1.questionIndex];
+            } else {
+                return team2Questions[gameState.team2.questionIndex];
+            }
+        }
+
+        function loadCurrentQuestion() {
+            const q = getCurrentQuestion();
+            if (!q) {
+                endGame();
+                return;
+            }
+
+            // Update Header Tags
+            const questionIndex = gameState.currentTurn === 1 ? gameState.team1.questionIndex + 1 : gameState.team2.questionIndex + 1;
+            document.getElementById('teamQuestionIndex').innerText = questionIndex;
+            document.getElementById('questionText').innerText = q.title + ": " + (q.question || q.instruction);
+
+            const typeBadge = document.getElementById('questionTypeBadge');
+            const dragArea = document.getElementById('dragDropArea');
+            const mcqArea = document.getElementById('multipleChoiceArea');
+
+            if (q.type === 'drag') {
+                typeBadge.innerHTML = '<i class="fa-solid fa-hand-pointer mr-1"></i> Drag & Drop';
+                typeBadge.className = 'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40';
+                
+                dragArea.classList.remove('hidden');
+                dragArea.classList.add('flex');
+                mcqArea.classList.add('hidden');
+                mcqArea.classList.remove('grid');
+
+                setupDragAndDrop(q);
+            } else {
+                typeBadge.innerHTML = '<i class="fa-solid fa-list-check mr-1"></i> Pilihan Ganda';
+                typeBadge.className = 'px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/40';
+
+                dragArea.classList.add('hidden');
+                dragArea.classList.remove('flex');
+                mcqArea.classList.remove('hidden');
+                mcqArea.classList.add('grid');
+
+                setupMultipleChoice(q);
+            }
+        }
+
+        function setupDragAndDrop(q) {
+            const dropContainer = document.getElementById('dropSlotsContainer');
+            const itemsContainer = document.getElementById('dragItemsContainer');
+            
+            dropContainer.innerHTML = '';
+            itemsContainer.innerHTML = '';
+            gameState.selectedItemForPlacement = null;
+
+            // Shuffle items copy
+            let shuffledItems = [...q.items].sort(() => Math.random() - 0.5);
+
+            if (q.groupedTarget) {
+                // Category Grouping Drag
+                document.getElementById('instructionText').innerText = 'Ketuk item di bawah, lalu ketuk Kotak Kategori yang sesuai!';
+
+                q.categories.forEach(cat => {
+                    const slotDiv = document.createElement('div');
+                    slotDiv.className = 'drop-zone flex-1 min-w-[200px] p-3 rounded-xl bg-slate-800/90 border-2 border-slate-600 flex flex-col gap-2 min-h-[120px]';
+                    slotDiv.dataset.categoryId = cat.id;
+                    slotDiv.innerHTML = `<div class="text-xs font-bold text-teal-300 pb-1 border-b border-slate-700 text-center">${cat.name}</div>
+                                         <div class="slot-contents flex flex-wrap gap-2 min-h-[60px] items-center justify-center"></div>`;
+                    
+                    // Drop Event listeners
+                    slotDiv.addEventListener('dragover', handleDragOver);
+                    slotDiv.addEventListener('dragleave', handleDragLeave);
+                    slotDiv.addEventListener('drop', (e) => handleDropGroup(e, cat.id));
+                    slotDiv.addEventListener('click', () => handleSlotClickGroup(cat.id));
+
+                    dropContainer.appendChild(slotDiv);
+                });
+
+            } else {
+                // Sequence Ordering Drag
+                document.getElementById('instructionText').innerText = 'Ketuk item di bawah lalu ketuk Slot Kosong untuk menyusun urutan!';
+
+                q.correctOrder.forEach((_, idx) => {
+                    const slotDiv = document.createElement('div');
+                    slotDiv.className = 'drop-zone w-28 md:w-36 h-16 md:h-20 rounded-xl bg-slate-800/90 border-2 border-dashed border-slate-500 flex items-center justify-center p-2 text-center text-xs md:text-sm text-slate-400 font-semibold relative';
+                    slotDiv.dataset.slotIndex = idx;
+                    slotDiv.innerHTML = `<span class="opacity-40">Posisi ${idx + 1}</span>`;
+
+                    // Drop Event listeners
+                    slotDiv.addEventListener('dragover', handleDragOver);
+                    slotDiv.addEventListener('dragleave', handleDragLeave);
+                    slotDiv.addEventListener('drop', (e) => handleDropSequence(e, idx));
+                    slotDiv.addEventListener('click', () => handleSlotClickSequence(idx));
+
+                    dropContainer.appendChild(slotDiv);
+
+                    if (idx < q.correctOrder.length - 1) {
+                        const arrow = document.createElement('div');
+                        arrow.className = 'text-amber-400 font-bold text-xl self-center';
+                        arrow.innerHTML = '<i class="fa-solid fa-arrow-right"></i>';
+                        dropContainer.appendChild(arrow);
+                    }
+                });
+            }
+
+            // Render Source Items
+            shuffledItems.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'drag-item px-3 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 border border-slate-500 text-white font-bold text-xs md:text-sm shadow-md flex items-center justify-center text-center';
+                itemEl.draggable = true;
+                itemEl.dataset.itemId = item.id;
+                itemEl.innerText = item.text;
+
+                itemEl.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', item.id);
+                    playSound('select');
+                });
+
+                itemEl.addEventListener('click', () => handleItemSelect(itemEl, item.id));
+
+                itemsContainer.appendChild(itemEl);
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleItemSelect(el, itemId) {
+            playSound('select');
+            document.querySelectorAll('.drag-item').forEach(i => i.classList.remove('selected', 'ring-4', 'ring-amber-400'));
+            
+            if (gameState.selectedItemForPlacement === itemId) {
+                gameState.selectedItemForPlacement = null;
+            } else {
+                gameState.selectedItemForPlacement = itemId;
+                el.classList.add('selected', 'ring-4', 'ring-amber-400');
+            }
+        }
+
+        function handleDropSequence(e, slotIdx) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            const itemId = e.dataTransfer.getData('text/plain');
+            placeItemInSequenceSlot(itemId, slotIdx);
+        }
+
+        function handleSlotClickSequence(slotIdx) {
+            if (gameState.selectedItemForPlacement) {
+                placeItemInSequenceSlot(gameState.selectedItemForPlacement, slotIdx);
+                gameState.selectedItemForPlacement = null;
+                document.querySelectorAll('.drag-item').forEach(i => i.classList.remove('selected', 'ring-4', 'ring-amber-400'));
+            }
+        }
+
+        function placeItemInSequenceSlot(itemId, slotIdx) {
+            const q = getCurrentQuestion();
+            const itemObj = q.items.find(i => i.id === itemId);
+            if (!itemObj) return;
+
+            const slotEl = document.querySelector(`[data-slot-index="${slotIdx}"]`);
+            if (!slotEl) return;
+
+            // If item already in another slot, return it to container
+            document.querySelectorAll('.drop-zone').forEach(sz => {
+                if (sz.dataset.placedItemId === itemId) {
+                    sz.removeAttribute('data-placed-item-id');
+                    sz.innerHTML = `<span class="opacity-40">Posisi ${parseInt(sz.dataset.slotIndex) + 1}</span>`;
+                }
+            });
+
+            slotEl.dataset.placedItemId = itemId;
+            slotEl.innerHTML = `<div class="w-full h-full bg-emerald-700/80 rounded-lg flex items-center justify-center p-1 text-white font-bold text-xs md:text-sm shadow">${itemObj.text}</div>`;
+
+            // Hide or mark original item element
+            const origEl = document.querySelector(`#dragItemsContainer [data-item-id="${itemId}"]`);
+            if (origEl) origEl.classList.add('opacity-30', 'pointer-events-none');
+
+            playSound('select');
+        }
+
+        function handleDropGroup(e, categoryId) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            const itemId = e.dataTransfer.getData('text/plain');
+            placeItemInGroupCategory(itemId, categoryId);
+        }
+
+        function handleSlotClickGroup(categoryId) {
+            if (gameState.selectedItemForPlacement) {
+                placeItemInGroupCategory(gameState.selectedItemForPlacement, categoryId);
+                gameState.selectedItemForPlacement = null;
+                document.querySelectorAll('.drag-item').forEach(i => i.classList.remove('selected', 'ring-4', 'ring-amber-400'));
+            }
+        }
+
+        function placeItemInGroupCategory(itemId, categoryId) {
+            const q = getCurrentQuestion();
+            const itemObj = q.items.find(i => i.id === itemId);
+            if (!itemObj) return;
+
+            const categoryEl = document.querySelector(`[data-category-id="${categoryId}"] .slot-contents`);
+            if (!categoryEl) return;
+
+            // Move element into category
+            const existingInSlot = categoryEl.querySelector(`[data-item-id="${itemId}"]`);
+            if (existingInSlot) return;
+
+            const tag = document.createElement('div');
+            tag.className = 'px-2.5 py-1.5 rounded-lg bg-teal-600 border border-teal-400 text-white font-bold text-xs flex items-center gap-2';
+            tag.dataset.itemId = itemId;
+            tag.innerHTML = `<span>${itemObj.text}</span> <i class="fa-solid fa-xmark cursor-pointer hover:text-red-300" onclick="removeItemFromGroup('${itemId}')"></i>`;
+
+            categoryEl.appendChild(tag);
+
+            const origEl = document.querySelector(`#dragItemsContainer [data-item-id="${itemId}"]`);
+            if (origEl) origEl.classList.add('hidden');
+
+            playSound('select');
+        }
+
+        function removeItemFromGroup(itemId) {
+            const placedTag = document.querySelector(`.slot-contents [data-item-id="${itemId}"]`);
+            if (placedTag) placedTag.remove();
+
+            const origEl = document.querySelector(`#dragItemsContainer [data-item-id="${itemId}"]`);
+            if (origEl) origEl.classList.remove('hidden', 'opacity-30', 'pointer-events-none');
+
+            playSound('select');
+        }
+
+        function checkDragAnswer() {
+            const q = getCurrentQuestion();
+            let isCorrect = true;
+
+            if (q.groupedTarget) {
+                // Validate grouped drag
+                q.items.forEach(item => {
+                    const tagInCat = document.querySelector(`[data-category-id="${item.cat}"] [data-item-id="${item.id}"]`);
+                    if (!tagInCat) isCorrect = false;
+                });
+            } else {
+                // Validate sequence drag
+                q.correctOrder.forEach((id, idx) => {
+                    const slotEl = document.querySelector(`[data-slot-index="${idx}"]`);
+                    if (!slotEl || slotEl.dataset.placedItemId !== id) {
+                        isCorrect = false;
+                    }
+                });
+            }
+
+            processAnswerResult(isCorrect, q.explanation);
+        }
+
+        function setupMultipleChoice(q) {
+            const mcqContainer = document.getElementById('multipleChoiceArea');
+            mcqContainer.innerHTML = '';
+            document.getElementById('instructionText').innerText = 'Pilihlah satu jawaban yang paling tepat!';
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'p-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 hover:border-amber-400 text-left font-semibold text-slate-100 text-sm md:text-base transition hover:scale-[1.01] active:scale-95 shadow-md flex items-center justify-between gap-3';
+                btn.innerHTML = `<span>${opt.text}</span> <i class="fa-regular fa-circle text-slate-500"></i>`;
+                btn.onclick = () => {
+                    playSound('select');
+                    processAnswerResult(opt.correct, q.explanation);
+                };
+                mcqContainer.appendChild(btn);
+            });
+        }
+
+        function processAnswerResult(isCorrect, explanation) {
+            const attackingTeam = gameState.currentTurn === 1 ? gameState.team1 : gameState.team2;
+            const defendingTeam = gameState.currentTurn === 1 ? gameState.team2 : gameState.team1;
+            const attackerAvatar = document.getElementById(`team${gameState.currentTurn}Avatar`);
+            const defenderHud = document.getElementById(`team${gameState.currentTurn === 1 ? 2 : 1}HUD`);
+
+            const modal = document.getElementById('feedbackModal');
+            const iconBox = document.getElementById('feedbackIconContainer');
+            const title = document.getElementById('feedbackTitle');
+            const subtitle = document.getElementById('feedbackSubtitle');
+            const expText = document.getElementById('feedbackExplanation');
+
+            expText.innerHTML = explanation;
+
+            if (isCorrect) {
+                playSound('correct');
+                attackingTeam.score += 100;
+                defendingTeam.hp = Math.max(0, defendingTeam.hp - 10);
+
+                // Attack animation
+                attackerAvatar.classList.add(gameState.currentTurn === 1 ? 'animate-attack-left' : 'animate-attack-right');
+                setTimeout(() => defenderHud.classList.add('animate-shake'), 250);
+                setTimeout(() => {
+                    attackerAvatar.classList.remove('animate-attack-left', 'animate-attack-right');
+                    defenderHud.classList.remove('animate-shake');
+                }, 600);
+
+                iconBox.className = 'w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-emerald-500/20 text-emerald-400 border-2 border-emerald-400 shadow-emerald-500/30';
+                iconBox.innerHTML = '<i class="fa-solid fa-burst"></i>';
+                title.className = 'title-font text-2xl md:text-3xl font-bold text-emerald-400 mb-1';
+                title.innerText = 'SERANGAN BENAR! 🎉';
+                subtitle.innerText = `${attackingTeam.name} berhasil melancarkan serangan! +100 Poin dan HP musuh berkurang 10%!`;
+
+            } else {
+                playSound('wrong');
+                attackingTeam.hp = Math.max(0, attackingTeam.hp - 10);
+
+                defenderHud.classList.add('animate-shake');
+                setTimeout(() => defenderHud.classList.remove('animate-shake'), 500);
+
+                iconBox.className = 'w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-rose-500/20 text-rose-400 border-2 border-rose-400 shadow-rose-500/30';
+                iconBox.innerHTML = '<i class="fa-solid fa-shield-xmark"></i>';
+                title.className = 'title-font text-2xl md:text-3xl font-bold text-rose-400 mb-1';
+                title.innerText = 'JAWABAN KURANG TEPAT! ❌';
+                subtitle.innerText = `Serangan meleset! HP ${attackingTeam.name} berkurang 10% karena pertahanan guncang.`;
+            }
+
+            updateHUD();
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function nextTurn() {
+            document.getElementById('feedbackModal').classList.add('hidden');
+            document.getElementById('feedbackModal').classList.remove('flex');
+
+            // Switch Turns
+            if (gameState.currentTurn === 1) {
+                gameState.team1.questionIndex++;
+                gameState.currentTurn = 2;
+            } else {
+                gameState.team2.questionIndex++;
+                gameState.currentTurn = 1;
+                gameState.round++;
+            }
+
+            // Check Game End Condition (15 rounds or HP depleted)
+            if (gameState.round > 15 || gameState.team1.hp <= 0 || gameState.team2.hp <= 0) {
+                endGame();
+            } else {
+                updateHUD();
+                loadCurrentQuestion();
+            }
+        }
+
+        function endGame() {
+            playSound('win');
+            confetti({
+                particleCount: 150,
+                spread: 80,
+                origin: { y: 0.6 }
+            });
+
+            document.getElementById('battleScreen').classList.add('hidden');
+            document.getElementById('battleScreen').classList.remove('flex');
+
+            const resultScreen = document.getElementById('resultScreen');
+            resultScreen.classList.remove('hidden');
+
+            const winnerText = document.getElementById('winnerText');
+
+            let winnerName = '';
+            if (gameState.team1.score > gameState.team2.score) {
+                winnerName = `🏆 ${gameState.team1.name} MEMENANGKAN BATTLE!`;
+            } else if (gameState.team2.score > gameState.team1.score) {
+                winnerName = `🏆 ${gameState.team2.name} MEMENANGKAN BATTLE!`;
+            } else {
+                // If equal scores, check HP
+                if (gameState.team1.hp > gameState.team2.hp) {
+                    winnerName = `🏆 ${gameState.team1.name} MEMENANGKAN BATTLE (Sisa HP Lebih Tinggi)!`;
+                } else if (gameState.team2.hp > gameState.team1.hp) {
+                    winnerName = `🏆 ${gameState.team2.name} MEMENANGKAN BATTLE (Sisa HP Lebih Tinggi)!`;
+                } else {
+                    winnerName = '🤝 PERTANDINGAN SERI / SEIMBANG!';
+                }
+            }
+
+            winnerText.innerText = winnerName;
+
+            // Final Scores Update
+            document.getElementById('finalTeam1Name').innerText = gameState.team1.name;
+            document.getElementById('finalTeam1Score').innerText = gameState.team1.score + ' Pts';
+            document.getElementById('finalTeam1Hp').innerText = 'Sisa HP: ' + gameState.team1.hp + '%';
+
+            document.getElementById('finalTeam2Name').innerText = gameState.team2.name;
+            document.getElementById('finalTeam2Score').innerText = gameState.team2.score + ' Pts';
+            document.getElementById('finalTeam2Hp').innerText = 'Sisa HP: ' + gameState.team2.hp + '%';
+        }
+
+        // Initialize default view on window load
+        window.onload = function() {
+            console.log("Game Battle Rantai Makanan (15 Soal) Siap Dimainkan!");
+        };
+    </script>
+</body>
+</html>
